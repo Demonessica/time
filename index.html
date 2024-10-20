@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+	<title>What time is it?</title>
+	<meta name='viewport' content='width=device-width, initial-scale=1'>
+	<meta name='description' content='Shows the date and time in year.decimal, 24h analogue, and standard digital formats'>
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="Phoenix Decimal Time">
+	<meta property="og:title" content="What time is it?">
+	<meta property="og:description" content="Shows the date and time in year.decimal, 24h analogue, and standard digital formats">
+	<meta property="og:image" content="https://decimaltime.phoenix147.repl.co/img.png">
+	<meta name="theme-color" content="#ff1100">
+	<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body style='margin:0;text-align:center;font:bold 10vh/12vh Courier;cursor:default;user-select:none;display:flex;flex-direction:column;height:100vh;justify-content:center;align-items:center;'>
+	<span style='font-family:Helvetica;font-size:7vh;color:#888;'>It is currently</span>
+	  <span id='time'></span>
+	  <canvas id='c' width='1000px' height='1000px' style='display:none;'></canvas>
+    <div id='cl' style='width:50vh;height:50vh;background-size:cover;position:relative;'>
+      <div id='sec' style='height:calc(50vh / 2 * 0.75);width:0.25vh;border-radius:0.125vh;position:absolute;left:25vh;bottom:25vh;margin-bottom:-0.125vh;margin-left:-0.125vh;transform-origin:50% calc(50vh / 2 * 0.75 - 0.125vh);background-color:red;'></div>
+      <div id='min' style='height:calc(50vh / 2 * 0.6);width:0.5vh;border-radius:0.25vh;position:absolute;left:25vh;bottom:25vh;margin-bottom:-0.25vh;margin-left:-0.25vh;transform-origin:50% calc(50vh / 2 * 0.6 - 0.25vh);background-color:#444;'></div>
+      <div id='hr' style='height:calc(50vh / 2 * 0.5);width:1vh;border-radius:0.5vh;position:absolute;left:25vh;bottom:25vh;margin-bottom:-0.5vh;margin-left:-0.5vh;transform-origin:50% calc(50vh / 2 * 0.5 - 0.5vh);background-color:black;'></div>
+    </div>
+
+  	<span id='until' style='font-size:5vh;'></span>
+  	<script>
+	  	var cursor;
+	  	window.addEventListener('mousemove', function(){
+	  		document.body.style.cursor = 'default';
+	  		clearTimeout(cursor);
+	  		cursor = setTimeout(function(){document.body.style.cursor = 'none';}, 1000);
+	  	});
+	  	state = false;
+	  	document.body.onclick = function(){
+	  	  if (state){ document.body.style.filter = 'invert(1) hue-rotate(180deg)'
+	  	  document.body.style.backgroundColor = 'black'
+	  	  } else{ document.body.style.filter = ''
+         document.body.style.backgroundColor = 'white'}
+	  	  state = !state
+	  	}
+    </script>
+	  <script>
+			//canvas setup
+			var canvas = document.getElementById('c');
+			var c = canvas.getContext('2d');
+			cw = c.canvas.width
+			ch = c.canvas.height
+			
+			c.lineJoin = 'round';
+			c.lineCap = 'round';
+			c.textAlign = 'center';
+			c.textBaseline = 'middle';
+			
+			//function definition
+			c.rim = function(r, w, col){
+				c.beginPath();
+				c.arc(cw/2,ch/2,r,0,Math.PI*2);
+				c.closePath();
+				c.lineWidth = w;
+				c.strokeStyle = col;
+				c.stroke();
+			}
+			c.arrow = function(pos, off, len, wid, col){
+				c.beginPath();
+				c.moveTo(cw/2+Math.sin(pos/180*Math.PI)*off, ch/2-Math.cos(pos/180*Math.PI)*off);
+				c.lineTo(cw/2+Math.sin(pos/180*Math.PI)*len, ch/2-Math.cos(pos/180*Math.PI)*len);
+				c.lineWidth = wid;
+				c.strokeStyle = col;
+				c.stroke();
+			}
+			c.divisionLine = function(step, offset, rad, len, wid, col){
+				if (step == 0){return 'step must be 1 or higher'};
+				c.lineWidth = wid;
+				c.strokeStyle = col;
+				for (var i = 0; i < 60/step; i++){
+					c.beginPath();
+					c.moveTo(500+Math.sin((step*i+offset)*6/180*Math.PI)*rad, 500-Math.cos((step*i+offset)*6/180*Math.PI)*rad);
+					c.lineTo(500+Math.sin((step*i+offset)*6/180*Math.PI)*(rad+len), 500-Math.cos((step*i+offset)*6/180*Math.PI)*(rad+len));
+					c.stroke();
+				};
+			}
+			c.clockText = function(text, font, deg, rad, col, strokeCol, strokeWidth){
+				c.font = font;
+				c.strokeStyle = strokeCol;
+				c.fillStyle = col;
+				c.lineWidth = strokeWidth;
+				
+				c.strokeText(text, cw/2+Math.sin(deg/180*Math.PI)*rad, ch/2-Math.cos(deg/180*Math.PI)*rad);
+				c.fillText(text, cw/2+Math.sin(deg/180*Math.PI)*rad, ch/2-Math.cos(deg/180*Math.PI)*rad);
+			}
+      
+      	c.lineCap = 'butt';
+				
+				c.rim(400, 5, 'black');
+				c.divisionLine(2.5, 0, 375, 25, 5, 'black');
+				
+				c.lineCap = 'round';
+				
+				c.clockText('6', '50px Verdana', 90, 450, 'black', 'transparent', 5);
+				c.clockText('12', '50px Verdana', 180, 450, 'black', 'transparent', 5);
+				c.clockText('18', '50px Verdana', 270, 450, 'black', 'transparent', 5);
+				c.clockText('24', '50px Verdana', 360, 450, 'black', 'transparent', 5);
+				
+        document.getElementById('cl').style.backgroundImage = 'url("'+c.canvas.toDataURL()+'")';
+			//main loop
+			function drawTime(){
+		  	thisYearStart = (new Date((new Date()).getFullYear(), 0))
+		  	nextYearStart = (new Date((new Date()).getFullYear() + 1, 0))
+		  	t = (new Date()).getFullYear() + (Date.now()-thisYearStart) /(nextYearStart-thisYearStart)
+		  	document.getElementById('time').innerHTML = t + '0'.repeat(18-String(t).length);
+        remain = nextYearStart-Date.now()
+        document.getElementById('until').innerHTML = (new Date()).toString().split(' (')[0];
+
+				var d = new Date(),
+					h = d.getHours(),
+					m = d.getMinutes(),
+					s = d.getSeconds(),
+					ms = d.getMilliseconds();
+				c.clearRect(0,0,1000,1000);
+        document.getElementById('sec').style.transform = 'rotate('+(s*6+ms/500*3)+'deg)'
+        document.getElementById('min').style.transform = 'rotate('+(m*6+s/10+ms/10000)+'deg)'
+        document.getElementById('hr').style.transform = 'rotate('+(h*15+m/4+s/240+ms/240000)+'deg)'
+			}
+			
+			setInterval(drawTime, 20);
+		</script>
+  </body>
+</html>
